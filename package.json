@@ -1,0 +1,28 @@
+{
+  "name": "gymspire",
+  "version": "1.0.0",
+  "description": "Thesis Project",
+  "main": "app.js",
+  "scripts": {
+    "start:dev": "nodemon server.js",
+    "start:prod": "cross-env NODE_ENV=production nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RMSJ2003/GymSpire.git"
+  },
+  "author": "Richard M.  Sahagun Jr.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RMSJ2003/GymSpire/issues"
+  },
+  "homepage": "https://github.com/RMSJ2003/GymSpire#readme",
+  "dependencies": {
+    "express": "^5.1.0",
+    "mongoose": "^8.18.2",
+    "validator": "^13.15.15"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
