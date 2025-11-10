@@ -118,12 +118,104 @@ exports.sendFriendRequest = catchAsync(async (req, res, next) => {
 
     // 5) Add the friend request to receiver's friendRequests array
     await User.findByIdAndUpdate(receiverId, {
-        $push: { friendRequests: senderId }
-    }, { new: true, runValidators: false }); // disable validators like passwordConfirm
+        $push: {
+            friendRequests: senderId
+        }
+    }, {
+        new: true,
+        runValidators: false
+    }); // disable validators like passwordConfirm
 
     res.status(200).json({
         status: 'success',
         message: 'Friend request sent successfully.'
+    });
+});
+
+exports.acceptFriendRequest = catchAsync(async (req, res, next) => {
+    const userId = req.user.id;
+    const requesterId = req.params.requesterId;
+
+    // 1) Find both users
+    const user = await User.findById(userId);
+    const requester = await User.findById(requesterId);
+
+    console.log(requester);
+
+    if (!requester)
+        return next(new AppError('Requester not found', 404));
+
+    // 2) Check if the request exists
+    if (!user.friendRequests.includes(requesterId))
+        return next(new AppError('No friend request from this user.', 400));
+
+    // 3) Update both users
+    const updatedUser = await User.findByIdAndUpdate(userId, {
+        $pull: {
+            friendRequests: requesterId
+        },
+        $push: {
+            friends: requesterId
+        }
+    }, {
+        new: true,
+        runValidators: false
+    });
+
+    await User.findByIdAndUpdate(requesterId, {
+        $push: {
+            friends: userId
+        }
+    }, {
+        runValidators: false
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Friend request accepted.',
+        data: {
+            user: updatedUser
+        }
+    })
+});
+
+exports.declineFriendRequest = catchAsync(async (req, res, next) => {
+    const userId = req.user.id;
+    const requesterId = req.params.requesterId;
+
+    const user = await User.findById(userId);
+
+    if (!user.friendRequests.includes(requesterId))
+        return next(new AppError('No friend request from this user.', 400));
+
+    const updatedUser = await User.findByIdAndUpdate(userId, {
+        $pull: {
+            friendRequests: requesterId
+        }
+    }, {
+        new: true,
+        runValidators: false
+    });
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Friend request declined.',
+        data: {
+            user: updatedUser
+        }
+    });
+});
+
+exports.getOnlineFriends = catchAsync(async (req, res, next) => {
+    const user = await User.findById(req.user.id).populate('friends');
+    const onlineFriends = user.friends.filter(friend => friend.activeStatus === 'online');
+
+    res.status(200).json({
+        status: 'success',
+        results: onlineFriends.length,
+        data: {
+            onlineFriends
+        }
     });
 });
 

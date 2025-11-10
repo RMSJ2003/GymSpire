@@ -39,6 +39,64 @@ const server = app.listen(port, () => {
     console.log(`App running on port ${port}...`);
 });
 
+// SOCKET.IO - START
+const { Server } = require('socket.io');
+const User = require('./models/userModel'); // <-- Import your User model
+
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  }
+});
+
+// Temporary in-memory tracker for online users
+const onlineUsers = new Map();
+
+io.on('connection', (socket) => {
+  console.log('🟢 A user connected:', socket.id);
+
+  // User comes online
+  socket.on('user-online', async (userId) => {
+    onlineUsers.set(socket.id, userId);
+    console.log(`✅ User ${userId} is now ONLINE`);
+
+    try {
+      await User.findByIdAndUpdate(userId, { activeStatus: 'online' });
+    } catch (err) {
+      console.error('Error updating user to online:', err.message);
+    }
+  });
+
+  // User manually goes offline
+  socket.on('user-offline', async (userId) => {
+    console.log(`🔴 User ${userId} went OFFLINE`);
+    onlineUsers.delete(socket.id);
+
+    try {
+      await User.findByIdAndUpdate(userId, { activeStatus: 'offline' });
+    } catch (err) {
+      console.error('Error updating user to offline:', err.message);
+    }
+  });
+
+  // When they disconnect
+  socket.on('disconnect', async () => {
+    const userId = onlineUsers.get(socket.id);
+    if (userId) {
+      console.log(`⚠️ User ${userId} disconnected`);
+      onlineUsers.delete(socket.id);
+
+      try {
+        await User.findByIdAndUpdate(userId, { activeStatus: 'offline' });
+      } catch (err) {
+        console.error('Error marking user offline:', err.message);
+      }
+    }
+  });
+});
+// SOCKET.IO - END
+
 // In unhandledRejection, crashing the application is OPTIONAL.
 process.on('unhandledRejection', err => {
     console.error('UNHANDLED REJECTION! 💥 Shutting down...');

@@ -21,19 +21,20 @@ router
 
 router.use(authController.protect);
 
-router.post('/sendFriendRequest/:friendId', userController.sendFriendRequest);
-
 router.get(
     '/me', 
     userController.getMe,
     userController.getUser
 );
-
 router.patch('/updateMe', userController.updateMe);
-
 router.delete('/deleteMe', userController.deleteMe);
 
+router.post('/sendFriendRequest/:friendId', userController.sendFriendRequest);
+router.patch('/acceptFriendRequest/:requesterId', userController.acceptFriendRequest);
+router.patch('/declineFriendRequest/:requesterId', userController.declineFriendRequest);
 router.delete('/removeFriend/:friendId', userController.removeFriend);
+
+router.get('/getOnlineFriends', userController.getOnlineFriends);
 
 router
     .route('/')
